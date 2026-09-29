@@ -107,3 +107,36 @@ export function emitSubmit() {
 }
 
 createApp(App).mount('#app')
+
+// 触摸兜底滚动：部分设备/悬浮窗会吃掉 WebView 的原生滚动手势
+// （实测拖拽完全不动，但点击类事件正常）。这里自己接管 touchmove：
+// 找到手指下的滚动容器，直接改 scrollTop，并 preventDefault 防止与原生滚动叠加。
+function installTouchScroll() {
+  let sc = null, y0 = 0, st0 = 0
+  const scrollerAt = (el) => {
+    while (el && el.nodeType === 1 && el !== document.body) {
+      const cs = getComputedStyle(el)
+      if (/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 2) return el
+      el = el.parentElement
+    }
+    const d = document.scrollingElement || document.documentElement
+    return d.scrollHeight > d.clientHeight + 2 ? d : null
+  }
+  addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) { sc = null; return }
+    sc = scrollerAt(e.target)
+    if (!sc) return
+    y0 = e.touches[0].clientY
+    st0 = sc.scrollTop
+  }, { passive: true })
+  addEventListener('touchmove', (e) => {
+    if (!sc) return
+    const dy = e.touches[0].clientY - y0
+    if (Math.abs(dy) < 3) return
+    sc.scrollTop = st0 - dy
+    if (e.cancelable) e.preventDefault()
+  }, { passive: false })
+  addEventListener('touchend', () => { sc = null }, { passive: true })
+  addEventListener('touchcancel', () => { sc = null }, { passive: true })
+}
+try { installTouchScroll() } catch (e) { /* 忽略 */ }
