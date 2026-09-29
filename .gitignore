@@ -1,0 +1,5 @@
+# ===== saoif-h5（SAOIF 自动助手 H5 界面 / Vue3 + Vite）=====
+node_modules/
+dist/
+*.log
+
