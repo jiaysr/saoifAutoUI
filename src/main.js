@@ -5,7 +5,7 @@
 import { createApp, reactive } from 'vue'
 import App from './App.vue'
 import './styles.css'
-import { installErrorHook } from './bridge.js'
+import { installErrorHook, sendDiag, sendJsErr } from './bridge.js'
 import { boot, api, IS_DEV } from './data/source.js'
 
 installErrorHook()
@@ -69,6 +69,18 @@ function handler(msg) {
       // 保留本地已改动的值（真机重发 init 时不覆盖用户编辑）
       for (const k in seeded) if (!(k in store.values)) store.values[k] = seeded[k]
       if (!store.values.func) store.values.func = seeded.func
+      // 布局自检：800ms 后回传滚动容器尺寸 + 程序化滚动测试（排查"无法滚动"到底卡在哪一层）
+      setTimeout(() => {
+        try {
+          const el = document.scrollingElement || document.documentElement
+          const p = document.querySelector('.panel')
+          const fmt = (x) => x ? (x.scrollHeight + '/' + x.clientHeight + '@' + Math.round(x.getBoundingClientRect().height)) : 'null'
+          const test = (x) => { if (!x) return 'null'; const a = x.scrollTop; x.scrollTop = a + 120; const b = x.scrollTop; x.scrollTop = a; return a + '->' + b }
+          sendDiag('win=' + window.innerWidth + 'x' + window.innerHeight
+            + ' doc=' + fmt(el) + ' docTest=' + test(el) + ' bodyOv=' + getComputedStyle(document.body).overflow
+            + ' panel=' + fmt(p) + ' panelTest=' + test(p))
+        } catch (e) { sendJsErr('diag: ' + e) }
+      }, 800)
       break
     }
     case 'hint':
