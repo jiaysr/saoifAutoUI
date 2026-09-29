@@ -45,8 +45,6 @@ export const sendAck    = (sid) => send({ type: 'ack', sid })
 export const sendCancel = (sid) => send({ type: 'cancel', sid })
 export const sendPing   = (sid, probe) => send({ type: 'ping', sid, probe: probe || '' })
 export const sendJsErr  = (err) => send({ type: 'jserror', error: String(err) })
-// 布局自检：把各滚动容器的尺寸/滚动测试结果回传 Lua（排查"无法滚动"）
-export const sendDiag   = (text) => send({ type: 'diag', text: String(text) })
 
 export function sendChange(sid, func, key, value, values) {
   // 同时给出 key/value 与全量 values，兼容 Lua 侧两种取法

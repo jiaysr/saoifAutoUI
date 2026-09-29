@@ -5,7 +5,7 @@
 import { createApp, reactive } from 'vue'
 import App from './App.vue'
 import './styles.css'
-import { installErrorHook, sendDiag, sendJsErr } from './bridge.js'
+import { installErrorHook } from './bridge.js'
 import { boot, api, IS_DEV } from './data/source.js'
 
 installErrorHook()
@@ -69,18 +69,6 @@ function handler(msg) {
       // 保留本地已改动的值（真机重发 init 时不覆盖用户编辑）
       for (const k in seeded) if (!(k in store.values)) store.values[k] = seeded[k]
       if (!store.values.func) store.values.func = seeded.func
-      // 布局自检：800ms 后回传滚动容器尺寸 + 程序化滚动测试（排查"无法滚动"到底卡在哪一层）
-      setTimeout(() => {
-        try {
-          const el = document.scrollingElement || document.documentElement
-          const p = document.querySelector('.panel')
-          const fmt = (x) => x ? (x.scrollHeight + '/' + x.clientHeight + '@' + Math.round(x.getBoundingClientRect().height)) : 'null'
-          const test = (x) => { if (!x) return 'null'; const a = x.scrollTop; x.scrollTop = a + 120; const b = x.scrollTop; x.scrollTop = a; return a + '->' + b }
-          sendDiag('win=' + window.innerWidth + 'x' + window.innerHeight
-            + ' doc=' + fmt(el) + ' docTest=' + test(el) + ' bodyOv=' + getComputedStyle(document.body).overflow
-            + ' panel=' + fmt(p) + ' panelTest=' + test(p))
-        } catch (e) { sendJsErr('diag: ' + e) }
-      }, 800)
       break
     }
     case 'hint':
@@ -107,40 +95,3 @@ export function emitSubmit() {
 }
 
 createApp(App).mount('#app')
-
-// 触摸滚动（自绘，独占）：
-// 真机实测：WebView 的原生滚动手势会被悬浮窗/手势层吃掉（拖拽只抖一下），
-// 但 touch 事件能正常到达页面、程序化 scrollTop 有效 → 自己实现滚动。
-// 配合 CSS 的 touch-action: none，原生滚动完全关闭，由这里独占，避免两边打架。
-function installTouchScroll() {
-  let sc = null, lastY = 0
-  const scrollerAt = (el) => {
-    while (el && el.nodeType === 1 && el !== document.body) {
-      const cs = getComputedStyle(el)
-      if (/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 2) return el
-      el = el.parentElement
-    }
-    const d = document.scrollingElement || document.documentElement
-    return d.scrollHeight > d.clientHeight + 2 ? d : null
-  }
-  const onStart = (e) => {
-    if (e.touches.length !== 1) { sc = null; return }
-    sc = scrollerAt(e.target)
-    lastY = e.touches[0].clientY
-  }
-  const onMove = (e) => {
-    if (!sc) return
-    const y = e.touches[0].clientY
-    const dy = y - lastY
-    if (dy === 0) return
-    lastY = y
-    sc.scrollTop -= dy          // 手指上滑(dy<0) → 内容上移
-    if (e.cancelable) e.preventDefault()
-  }
-  const onEnd = () => { sc = null }
-  addEventListener('touchstart', onStart, { passive: true, capture: true })
-  addEventListener('touchmove', onMove, { passive: false, capture: true })
-  addEventListener('touchend', onEnd, { passive: true, capture: true })
-  addEventListener('touchcancel', onEnd, { passive: true, capture: true })
-}
-try { installTouchScroll() } catch (e) { /* 忽略 */ }

@@ -10,39 +10,25 @@
   --err: #f4655f;
 }
 * { box-sizing: border-box; }
-
-/* 布局：整页滚动 + 底部按钮吸底。
-   真机实测：面板内部滚动在部分设备/悬浮窗下会被吃掉手势，整页滚动是能用的那种
-   （d889dd0 版本实测竖屏可滚）。窗口尺寸由 Lua 侧取"横竖屏都装得下"的 640x600，
-   UI 只按这一种尺寸维护样式（需要时 supports 宽窗口，见文件末尾 media query）。 */
-html, body { height: auto; min-height: 100%; touch-action: none; }
-/* touch-action: none —— 原生滚动手势由 main.js 的 installTouchScroll 独占实现
-   （真机实测：不关掉原生滚动时，两边同时改 scrollTop 会互相抵消，拖拽只剩抖动） */
+html, body { margin: 0; height: 100%; }
 body {
-  margin: 0;
   background: radial-gradient(1200px 600px at 15% -10%, #1b3160 0%, transparent 55%), var(--bg);
   color: var(--txt);
   font: 14px/1.5 system-ui, -apple-system, "Noto Sans CJK SC", sans-serif;
-  overflow: auto;
+  overflow: hidden;
   user-select: none;
 }
+/* 布局兜底：整个页面可滚动 + 底部按钮吸底。
+   WebView 高度不确定（横屏窗口可能高于可视区），这样任何情况下都能滚到"保存并运行"。 */
+html, body { height: auto; min-height: 100%; }
+body { overflow: auto; }
 .wrap { display: flex; flex-direction: column; min-height: 100vh; padding: 10px 12px 12px; }
-
 header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .title { font-size: 16px; font-weight: 600; }
 .ver { font-size: 11px; color: var(--dim); font-weight: 400; margin-left: 4px; }
 .conn { font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--line); }
 .conn.ok { color: var(--ok); border-color: rgba(57,217,138,.4); }
 .conn.err { color: var(--err); border-color: rgba(244,101,95,.4); }
-.conn.dev { color: #f5c451; border-color: rgba(245,196,81,.5); }
-
-.sections { display: flex; gap: 6px; margin-bottom: 8px; }
-.sections button {
-  flex: 1; padding: 6px 0; font-size: 13px; cursor: pointer;
-  background: transparent; color: var(--dim);
-  border: 1px solid var(--line); border-radius: 9px;
-}
-.sections button.on { color: #fff; font-weight: 600; background: rgba(76,155,240,.18); border-color: rgba(76,155,240,.55); }
 
 nav { display: flex; gap: 6px; flex: 0 0 auto; background: rgba(255,255,255,.04); padding: 4px; border-radius: 11px; }
 .tab {
@@ -53,11 +39,10 @@ nav { display: flex; gap: 6px; flex: 0 0 auto; background: rgba(255,255,255,.04)
 
 .panel { flex: 1 1 auto; overflow: visible; margin-top: 10px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
-.card + .card { margin-top: 8px; }
 .desc { margin: 0 0 8px; color: var(--dim); font-size: 13px; }
 .fields { display: flex; flex-direction: column; gap: 8px; }
 .field { display: flex; align-items: center; gap: 8px; }
-.field .label { flex: 0 0 118px; color: var(--dim); font-size: 13px; }
+.field .label { flex: 0 0 108px; color: var(--dim); font-size: 13px; }
 .field input[type="text"],
 .field input[type="number"],
 .field select {
@@ -76,7 +61,6 @@ footer {
 }
 footer button { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 14px; cursor: pointer; }
 .ghost { background: transparent; color: var(--dim); }
-.scrollbtn { flex: 0 0 auto; padding: 10px 12px; }
 .run { flex: 1 1 auto; background: linear-gradient(180deg, #3f8ae0, #2f6dc4); color: #fff; border-color: transparent; font-weight: 600; }
 .run:disabled { opacity: .45; }
 
@@ -86,6 +70,18 @@ footer button { padding: 10px 14px; border-radius: 10px; border: 1px solid var(-
 .hint.warn { color: #f5c451;     border-color: rgba(245,196,81,.45);  background: rgba(245,196,81,.08); }
 .hint.err  { color: var(--err);  border-color: rgba(244,101,95,.45);  background: rgba(244,101,95,.08); }
 
+/* 顶层分区：功能 / 设置 */
+.sections { display: flex; gap: 6px; margin-bottom: 8px; }
+.sections button {
+  flex: 1; padding: 6px 0; font-size: 13px; cursor: pointer;
+  background: transparent; color: var(--dim);
+  border: 1px solid var(--line); border-radius: 9px;
+}
+.sections button.on { color: #fff; font-weight: 600; background: rgba(76,155,240,.18); border-color: rgba(76,155,240,.55); }
+
+/* DEV 角标 */
+.conn.dev { color: #f5c451; border-color: rgba(245,196,81,.5); }
+
 /* dev 提交预览 */
 .preview {
   margin-top: 8px; border: 1px solid var(--line); border-radius: 9px;
@@ -94,11 +90,3 @@ footer button { padding: 10px 14px; border-radius: 10px; border: 1px solid var(-
 .preview-head { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; background: rgba(255,255,255,.05); }
 .preview-head button { background: transparent; color: var(--dim); border: 0; font-size: 14px; cursor: pointer; }
 .preview pre { margin: 0; padding: 8px; max-height: 150px; overflow: auto; }
-
-/* ===== 尺寸相关样式（默认 640x600；若以后用宽窗口，下面的 media query 生效）===== */
-@media (min-width: 900px) {
-  .field .label { flex: 0 0 132px; }
-}
-@media (max-width: 899px) {
-  .field .label { flex: 0 0 104px; }
-}
