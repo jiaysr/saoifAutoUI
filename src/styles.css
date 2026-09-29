@@ -10,19 +10,21 @@
   --err: #f4655f;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; }
+
+/* 布局：整页滚动 + 底部按钮吸底。
+   真机实测：面板内部滚动在部分设备/悬浮窗下会被吃掉手势，整页滚动是能用的那种
+   （d889dd0 版本实测竖屏可滚）。窗口尺寸由 Lua 侧取"横竖屏都装得下"的 640x600，
+   UI 只按这一种尺寸维护样式（需要时 supports 宽窗口，见文件末尾 media query）。 */
+html, body { height: auto; min-height: 100%; }
 body {
+  margin: 0;
   background: radial-gradient(1200px 600px at 15% -10%, #1b3160 0%, transparent 55%), var(--bg);
   color: var(--txt);
   font: 14px/1.5 system-ui, -apple-system, "Noto Sans CJK SC", sans-serif;
-  overflow: hidden;
+  overflow: auto;
   user-select: none;
 }
-
-/* 布局：固定视口 + 面板内部滚动。
-   WebView 悬浮窗内"整页滚动"不生效（实测），而面板内部滚动有效。
-   窗口尺寸由 Lua 侧定死两套：横屏 1100x570 / 竖屏 640x980 —— UI 只按这两种尺寸维护样式。 */
-.wrap { display: flex; flex-direction: column; height: 100vh; padding: 10px 12px 12px; }
+.wrap { display: flex; flex-direction: column; min-height: 100vh; padding: 10px 12px 12px; }
 
 header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .title { font-size: 16px; font-weight: 600; }
@@ -47,12 +49,7 @@ nav { display: flex; gap: 6px; flex: 0 0 auto; background: rgba(255,255,255,.04)
 }
 .tab.active { background: linear-gradient(180deg, #2f66b8, #27538f); color: #fff; font-weight: 600; }
 
-.panel {
-  flex: 1 1 auto; min-height: 0;
-  overflow-y: auto; overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  margin-top: 10px;
-}
+.panel { flex: 1 1 auto; overflow: visible; margin-top: 10px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
 .card + .card { margin-top: 8px; }
 .desc { margin: 0 0 8px; color: var(--dim); font-size: 13px; }
@@ -70,9 +67,14 @@ nav { display: flex; gap: 6px; flex: 0 0 auto; background: rgba(255,255,255,.04)
 .tip { color: var(--dim); font-size: 11px; }
 .empty { color: var(--dim); text-align: center; padding: 18px 0; }
 
-footer { flex: 0 0 auto; display: flex; gap: 8px; margin-top: 10px; }
+footer {
+  flex: 0 0 auto; display: flex; gap: 8px; margin-top: 10px;
+  position: sticky; bottom: 0; padding-top: 8px;
+  background: linear-gradient(180deg, rgba(14,21,38,0), var(--bg) 45%);
+}
 footer button { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 14px; cursor: pointer; }
 .ghost { background: transparent; color: var(--dim); }
+.scrollbtn { flex: 0 0 auto; padding: 10px 12px; }
 .run { flex: 1 1 auto; background: linear-gradient(180deg, #3f8ae0, #2f6dc4); color: #fff; border-color: transparent; font-weight: 600; }
 .run:disabled { opacity: .45; }
 
@@ -91,13 +93,10 @@ footer button { padding: 10px 14px; border-radius: 10px; border: 1px solid var(-
 .preview-head button { background: transparent; color: var(--dim); border: 0; font-size: 14px; cursor: pointer; }
 .preview pre { margin: 0; padding: 8px; max-height: 150px; overflow: auto; }
 
-/* ===== 两套固定尺寸的样式微调（UI 只维护这两种）===== */
-/* 横屏：1100x570 —— 宽，标签列可宽些、纵向更紧凑 */
+/* ===== 尺寸相关样式（默认 640x600；若以后用宽窗口，下面的 media query 生效）===== */
 @media (min-width: 900px) {
   .field .label { flex: 0 0 132px; }
-  .panel { margin-top: 8px; }
 }
-/* 竖屏：640x980 —— 窄，标签列窄些 */
 @media (max-width: 899px) {
   .field .label { flex: 0 0 104px; }
 }
