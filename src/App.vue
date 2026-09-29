@@ -54,7 +54,6 @@
 
     <footer>
       <button class="ghost" @click="cancel">退出</button>
-      <button class="ghost scrollbtn" @click="scrollStep" title="翻页滚动（拖不动时用它）">▼</button>
       <button class="run" :disabled="mode === 'task' && !curTaskId" @click="submit">保存并运行</button>
     </footer>
 
@@ -104,16 +103,6 @@ function onField(key, value) {
 
 function submit() { if (mode.value === 'task' && !curTaskId.value) return; emitSubmit() }
 function cancel() { api.cancel() }
-
-// 兜底滚动：部分设备悬浮窗会吃掉拖拽手势（实测），给一个不依赖手势的翻页按钮。
-// 面板内部可滚就滚面板，否则滚整页；到底后再点回到顶部。
-function scrollStep() {
-  const el = document.querySelector('.panel')
-  const sc = (el && el.scrollHeight > el.clientHeight + 4) ? el : (document.scrollingElement || document.documentElement)
-  const max = sc.scrollHeight - sc.clientHeight
-  const step = sc.clientHeight * 0.75
-  sc.scrollTop = (sc.scrollTop + step >= max - 8) ? 0 : sc.scrollTop + step
-}
 
 onAutoTest(() => {
   try {

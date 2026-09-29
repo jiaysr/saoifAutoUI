@@ -15,7 +15,9 @@
    真机实测：面板内部滚动在部分设备/悬浮窗下会被吃掉手势，整页滚动是能用的那种
    （d889dd0 版本实测竖屏可滚）。窗口尺寸由 Lua 侧取"横竖屏都装得下"的 640x600，
    UI 只按这一种尺寸维护样式（需要时 supports 宽窗口，见文件末尾 media query）。 */
-html, body { height: auto; min-height: 100%; }
+html, body { height: auto; min-height: 100%; touch-action: none; }
+/* touch-action: none —— 原生滚动手势由 main.js 的 installTouchScroll 独占实现
+   （真机实测：不关掉原生滚动时，两边同时改 scrollTop 会互相抵消，拖拽只剩抖动） */
 body {
   margin: 0;
   background: radial-gradient(1200px 600px at 15% -10%, #1b3160 0%, transparent 55%), var(--bg);

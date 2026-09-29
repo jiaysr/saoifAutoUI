@@ -108,11 +108,12 @@ export function emitSubmit() {
 
 createApp(App).mount('#app')
 
-// 触摸兜底滚动：部分设备/悬浮窗会吃掉 WebView 的原生滚动手势
-// （实测拖拽完全不动，但点击类事件正常）。这里自己接管 touchmove：
-// 找到手指下的滚动容器，直接改 scrollTop，并 preventDefault 防止与原生滚动叠加。
+// 触摸滚动（自绘，独占）：
+// 真机实测：WebView 的原生滚动手势会被悬浮窗/手势层吃掉（拖拽只抖一下），
+// 但 touch 事件能正常到达页面、程序化 scrollTop 有效 → 自己实现滚动。
+// 配合 CSS 的 touch-action: none，原生滚动完全关闭，由这里独占，避免两边打架。
 function installTouchScroll() {
-  let sc = null, y0 = 0, st0 = 0
+  let sc = null, lastY = 0
   const scrollerAt = (el) => {
     while (el && el.nodeType === 1 && el !== document.body) {
       const cs = getComputedStyle(el)
@@ -122,21 +123,24 @@ function installTouchScroll() {
     const d = document.scrollingElement || document.documentElement
     return d.scrollHeight > d.clientHeight + 2 ? d : null
   }
-  addEventListener('touchstart', (e) => {
+  const onStart = (e) => {
     if (e.touches.length !== 1) { sc = null; return }
     sc = scrollerAt(e.target)
+    lastY = e.touches[0].clientY
+  }
+  const onMove = (e) => {
     if (!sc) return
-    y0 = e.touches[0].clientY
-    st0 = sc.scrollTop
-  }, { passive: true })
-  addEventListener('touchmove', (e) => {
-    if (!sc) return
-    const dy = e.touches[0].clientY - y0
-    if (Math.abs(dy) < 3) return
-    sc.scrollTop = st0 - dy
+    const y = e.touches[0].clientY
+    const dy = y - lastY
+    if (dy === 0) return
+    lastY = y
+    sc.scrollTop -= dy          // 手指上滑(dy<0) → 内容上移
     if (e.cancelable) e.preventDefault()
-  }, { passive: false })
-  addEventListener('touchend', () => { sc = null }, { passive: true })
-  addEventListener('touchcancel', () => { sc = null }, { passive: true })
+  }
+  const onEnd = () => { sc = null }
+  addEventListener('touchstart', onStart, { passive: true, capture: true })
+  addEventListener('touchmove', onMove, { passive: false, capture: true })
+  addEventListener('touchend', onEnd, { passive: true, capture: true })
+  addEventListener('touchcancel', onEnd, { passive: true, capture: true })
 }
 try { installTouchScroll() } catch (e) { /* 忽略 */ }
