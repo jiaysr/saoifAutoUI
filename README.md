@@ -1,4 +1,4 @@
-# saoif-h5 — SAOIF 自动助手 H5 界面
+# SaoifAutoUI — SAOIF 自动助手 H5 界面
 
 懒人精灵（lrjl）脚本项目的 H5 配置界面：**Vue 3 + Vite + vite-plugin-singlefile**。
 构建产物是一个全内联、无网络依赖的单文件 HTML，被自动包装成 Lua 模块写入脚本项目的 `脚本/ui/h5_page.lua`，
