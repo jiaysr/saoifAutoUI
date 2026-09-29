@@ -3,6 +3,3 @@ node_modules/
 dist/
 *.log
 
-
-# sync 生成物（npm run dev / build 会自动重新生成）
-src/generated/
