@@ -102,7 +102,16 @@ function onField(key, value) {
 }
 
 function submit() { if (mode.value === 'task' && !curTaskId.value) return; emitSubmit() }
-function cancel() { api.cancel() }
+
+// 退出防误触：窗口刚弹出时偶发被外部触摸命中（真机实测"界面一闪而过"就是这个原因），
+// 改成 1.5s 内点两次才真正退出。
+let cancelArmed = 0
+function cancel() {
+  const now = Date.now()
+  if (now - cancelArmed < 1500) { api.cancel(); return }
+  cancelArmed = now
+  store.hint = { level: 'warn', text: '再点一次「退出」确认关闭（防误触）' }
+}
 
 onAutoTest(() => {
   try {
