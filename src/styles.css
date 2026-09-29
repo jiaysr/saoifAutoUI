@@ -18,7 +18,11 @@ body {
   overflow: hidden;
   user-select: none;
 }
-.wrap { display: flex; flex-direction: column; height: 100vh; padding: 10px 12px 12px; }
+/* 布局兜底：整个页面可滚动 + 底部按钮吸底。
+   WebView 高度不确定（横屏窗口可能高于可视区），这样任何情况下都能滚到"保存并运行"。 */
+html, body { height: auto; min-height: 100%; }
+body { overflow: auto; }
+.wrap { display: flex; flex-direction: column; min-height: 100vh; padding: 10px 12px 12px; }
 header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .title { font-size: 16px; font-weight: 600; }
 .ver { font-size: 11px; color: var(--dim); font-weight: 400; margin-left: 4px; }
@@ -33,7 +37,7 @@ nav { display: flex; gap: 6px; flex: 0 0 auto; background: rgba(255,255,255,.04)
 }
 .tab.active { background: linear-gradient(180deg, #2f66b8, #27538f); color: #fff; font-weight: 600; }
 
-.panel { flex: 1 1 auto; overflow: auto; margin-top: 10px; }
+.panel { flex: 1 1 auto; overflow: visible; margin-top: 10px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
 .desc { margin: 0 0 8px; color: var(--dim); font-size: 13px; }
 .fields { display: flex; flex-direction: column; gap: 8px; }
@@ -50,7 +54,11 @@ nav { display: flex; gap: 6px; flex: 0 0 auto; background: rgba(255,255,255,.04)
 .tip { color: var(--dim); font-size: 11px; }
 .empty { color: var(--dim); text-align: center; padding: 18px 0; }
 
-footer { flex: 0 0 auto; display: flex; gap: 8px; margin-top: 10px; }
+footer {
+  flex: 0 0 auto; display: flex; gap: 8px; margin-top: 10px;
+  position: sticky; bottom: 0; padding-top: 8px;
+  background: linear-gradient(180deg, rgba(14,21,38,0), var(--bg) 45%);
+}
 footer button { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 14px; cursor: pointer; }
 .ghost { background: transparent; color: var(--dim); }
 .run { flex: 1 1 auto; background: linear-gradient(180deg, #3f8ae0, #2f6dc4); color: #fff; border-color: transparent; font-weight: 600; }
