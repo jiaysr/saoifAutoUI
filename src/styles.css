@@ -55,3 +55,30 @@ footer button { padding: 10px 14px; border-radius: 10px; border: 1px solid var(-
 .ghost { background: transparent; color: var(--dim); }
 .run { flex: 1 1 auto; background: linear-gradient(180deg, #3f8ae0, #2f6dc4); color: #fff; border-color: transparent; font-weight: 600; }
 .run:disabled { opacity: .45; }
+
+/* 参数校验/提示条 */
+.hint { margin-top: 8px; padding: 7px 10px; border-radius: 9px; font-size: 12px; border: 1px solid var(--line); }
+.hint.ok   { color: var(--ok);   border-color: rgba(57,217,138,.45);  background: rgba(57,217,138,.08); }
+.hint.warn { color: #f5c451;     border-color: rgba(245,196,81,.45);  background: rgba(245,196,81,.08); }
+.hint.err  { color: var(--err);  border-color: rgba(244,101,95,.45);  background: rgba(244,101,95,.08); }
+
+/* 顶层分区：功能 / 设置 */
+.sections { display: flex; gap: 6px; margin-bottom: 8px; }
+.sections button {
+  flex: 1; padding: 6px 0; font-size: 13px; cursor: pointer;
+  background: transparent; color: var(--dim);
+  border: 1px solid var(--line); border-radius: 9px;
+}
+.sections button.on { color: #fff; font-weight: 600; background: rgba(76,155,240,.18); border-color: rgba(76,155,240,.55); }
+
+/* DEV 角标 */
+.conn.dev { color: #f5c451; border-color: rgba(245,196,81,.5); }
+
+/* dev 提交预览 */
+.preview {
+  margin-top: 8px; border: 1px solid var(--line); border-radius: 9px;
+  background: #0b1220; color: var(--dim); font-size: 11px; overflow: hidden;
+}
+.preview-head { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; background: rgba(255,255,255,.05); }
+.preview-head button { background: transparent; color: var(--dim); border: 0; font-size: 14px; cursor: pointer; }
+.preview pre { margin: 0; padding: 8px; max-height: 150px; overflow: auto; }
