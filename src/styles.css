@@ -18,17 +18,27 @@ body {
   overflow: hidden;
   user-select: none;
 }
-/* 布局兜底：整个页面可滚动 + 底部按钮吸底。
-   WebView 高度不确定（横屏窗口可能高于可视区），这样任何情况下都能滚到"保存并运行"。 */
-html, body { height: auto; min-height: 100%; }
-body { overflow: auto; }
-.wrap { display: flex; flex-direction: column; min-height: 100vh; padding: 10px 12px 12px; }
+
+/* 布局：固定视口 + 面板内部滚动。
+   WebView 悬浮窗内"整页滚动"不生效（实测），而面板内部滚动有效。
+   窗口尺寸由 Lua 侧定死两套：横屏 1100x570 / 竖屏 640x980 —— UI 只按这两种尺寸维护样式。 */
+.wrap { display: flex; flex-direction: column; height: 100vh; padding: 10px 12px 12px; }
+
 header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .title { font-size: 16px; font-weight: 600; }
 .ver { font-size: 11px; color: var(--dim); font-weight: 400; margin-left: 4px; }
 .conn { font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--line); }
 .conn.ok { color: var(--ok); border-color: rgba(57,217,138,.4); }
 .conn.err { color: var(--err); border-color: rgba(244,101,95,.4); }
+.conn.dev { color: #f5c451; border-color: rgba(245,196,81,.5); }
+
+.sections { display: flex; gap: 6px; margin-bottom: 8px; }
+.sections button {
+  flex: 1; padding: 6px 0; font-size: 13px; cursor: pointer;
+  background: transparent; color: var(--dim);
+  border: 1px solid var(--line); border-radius: 9px;
+}
+.sections button.on { color: #fff; font-weight: 600; background: rgba(76,155,240,.18); border-color: rgba(76,155,240,.55); }
 
 nav { display: flex; gap: 6px; flex: 0 0 auto; background: rgba(255,255,255,.04); padding: 4px; border-radius: 11px; }
 .tab {
@@ -37,12 +47,18 @@ nav { display: flex; gap: 6px; flex: 0 0 auto; background: rgba(255,255,255,.04)
 }
 .tab.active { background: linear-gradient(180deg, #2f66b8, #27538f); color: #fff; font-weight: 600; }
 
-.panel { flex: 1 1 auto; overflow: visible; margin-top: 10px; }
+.panel {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 10px;
+}
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.card + .card { margin-top: 8px; }
 .desc { margin: 0 0 8px; color: var(--dim); font-size: 13px; }
 .fields { display: flex; flex-direction: column; gap: 8px; }
 .field { display: flex; align-items: center; gap: 8px; }
-.field .label { flex: 0 0 108px; color: var(--dim); font-size: 13px; }
+.field .label { flex: 0 0 118px; color: var(--dim); font-size: 13px; }
 .field input[type="text"],
 .field input[type="number"],
 .field select {
@@ -54,11 +70,7 @@ nav { display: flex; gap: 6px; flex: 0 0 auto; background: rgba(255,255,255,.04)
 .tip { color: var(--dim); font-size: 11px; }
 .empty { color: var(--dim); text-align: center; padding: 18px 0; }
 
-footer {
-  flex: 0 0 auto; display: flex; gap: 8px; margin-top: 10px;
-  position: sticky; bottom: 0; padding-top: 8px;
-  background: linear-gradient(180deg, rgba(14,21,38,0), var(--bg) 45%);
-}
+footer { flex: 0 0 auto; display: flex; gap: 8px; margin-top: 10px; }
 footer button { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 14px; cursor: pointer; }
 .ghost { background: transparent; color: var(--dim); }
 .run { flex: 1 1 auto; background: linear-gradient(180deg, #3f8ae0, #2f6dc4); color: #fff; border-color: transparent; font-weight: 600; }
@@ -70,18 +82,6 @@ footer button { padding: 10px 14px; border-radius: 10px; border: 1px solid var(-
 .hint.warn { color: #f5c451;     border-color: rgba(245,196,81,.45);  background: rgba(245,196,81,.08); }
 .hint.err  { color: var(--err);  border-color: rgba(244,101,95,.45);  background: rgba(244,101,95,.08); }
 
-/* 顶层分区：功能 / 设置 */
-.sections { display: flex; gap: 6px; margin-bottom: 8px; }
-.sections button {
-  flex: 1; padding: 6px 0; font-size: 13px; cursor: pointer;
-  background: transparent; color: var(--dim);
-  border: 1px solid var(--line); border-radius: 9px;
-}
-.sections button.on { color: #fff; font-weight: 600; background: rgba(76,155,240,.18); border-color: rgba(76,155,240,.55); }
-
-/* DEV 角标 */
-.conn.dev { color: #f5c451; border-color: rgba(245,196,81,.5); }
-
 /* dev 提交预览 */
 .preview {
   margin-top: 8px; border: 1px solid var(--line); border-radius: 9px;
@@ -90,3 +90,14 @@ footer button { padding: 10px 14px; border-radius: 10px; border: 1px solid var(-
 .preview-head { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; background: rgba(255,255,255,.05); }
 .preview-head button { background: transparent; color: var(--dim); border: 0; font-size: 14px; cursor: pointer; }
 .preview pre { margin: 0; padding: 8px; max-height: 150px; overflow: auto; }
+
+/* ===== 两套固定尺寸的样式微调（UI 只维护这两种）===== */
+/* 横屏：1100x570 —— 宽，标签列可宽些、纵向更紧凑 */
+@media (min-width: 900px) {
+  .field .label { flex: 0 0 132px; }
+  .panel { margin-top: 8px; }
+}
+/* 竖屏：640x980 —— 窄，标签列窄些 */
+@media (max-width: 899px) {
+  .field .label { flex: 0 0 104px; }
+}
