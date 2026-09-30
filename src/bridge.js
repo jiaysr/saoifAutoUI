@@ -78,4 +78,9 @@ export function installReceiver(handler, autoTestHook) {
 
 export function installErrorHook() {
   window.onerror = (m, src, line, col) => sendJsErr(String(m) + ' @' + (src || '') + ':' + line + ':' + col)
+  // Promise 链里的异常不会走 window.onerror
+  window.addEventListener('unhandledrejection', (e) => {
+    const r = e.reason
+    sendJsErr('promise: ' + ((r && (r.stack || r.message)) || String(r)))
+  })
 }

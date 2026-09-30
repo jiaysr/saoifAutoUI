@@ -2,108 +2,85 @@
   <label class="field">
     <span class="label">{{ field.label || field.key }}</span>
 
-    <button
-      v-if="field.type === 'enum'"
-      ref="selRef"
-      type="button"
-      class="sel"
-      @click.stop="toggle"
-    >
-      <span class="sel-txt">{{ modelValue == null ? '' : modelValue }}</span>
-      <span class="arr">▾</span>
-    </button>
-
-    <input
-      v-else-if="field.type === 'bool'"
-      type="checkbox"
-      :checked="!!modelValue"
-      @change="$emit('update:modelValue', $event.target.checked)"
-    />
-
-    <input
-      v-else-if="field.type === 'int' || field.type === 'number'"
-      type="number"
+    <!-- 数字：步进器（触屏 ± 调节，也可直接输入） -->
+    <van-stepper
+      v-if="field.type === 'int' || field.type === 'number'"
+      :model-value="modelValue"
       :min="field.min" :max="field.max" :step="field.step || 1"
-      :value="modelValue"
-      @input="$emit('update:modelValue', Number($event.target.value))"
+      :integer="field.type === 'int'"
+      @update:model-value="(v) => $emit('update:modelValue', v)"
     />
 
-    <input
+    <!-- 布尔：开关 -->
+    <van-switch
+      v-else-if="field.type === 'bool'"
+      size="22px"
+      :model-value="!!modelValue"
+      @update:model-value="(v) => $emit('update:modelValue', v)"
+    />
+
+    <!-- 枚举：只读字段 + 自绘 Picker（悬浮窗里原生 select 弹层不可用） -->
+    <van-field
+      v-else-if="field.type === 'enum'"
+      class="picker-field"
+      readonly
+      is-link
+      input-align="right"
+      :model-value="modelValue == null ? '' : String(modelValue)"
+      @click="open = true"
+    />
+
+    <!-- 文本 -->
+    <van-field
       v-else
-      type="text"
-      :value="modelValue == null ? '' : modelValue"
-      @input="$emit('update:modelValue', $event.target.value)"
+      class="text-field"
+      :model-value="modelValue == null ? '' : String(modelValue)"
+      @update:model-value="(v) => $emit('update:modelValue', v)"
     />
 
     <small v-if="field.tip" class="tip">{{ field.tip }}</small>
   </label>
 
-  <!-- 原生 select 的下拉弹层在懒人精灵悬浮窗里弹不出来（无 Activity window token），
-       改自绘列表：Teleport 到 body + fixed 定位，避免被 .panel 的 overflow 裁剪 -->
-  <Teleport to="body">
-    <div v-if="open" ref="listRef" class="dropdown" :style="posStyle" @click.stop>
-      <div
-        v-for="o in (field.options || [])"
-        :key="o"
-        class="opt"
-        :class="{ on: o === modelValue }"
-        @click.stop="pick(o)"
-      >{{ o }}</div>
-    </div>
-  </Teleport>
+  <!-- 枚举选择弹层：Picker 自绘，teleport 到 body 避免 .panel 裁剪 -->
+  <van-popup v-model:show="open" position="bottom" round teleport="body">
+    <van-picker
+      v-model="pickValues"
+      :columns="pickColumns"
+      :title="field.label || field.key"
+      :visible-item-count="pickerRows"
+      @confirm="onPick"
+      @cancel="open = false"
+    />
+  </van-popup>
 </template>
 
 <script setup>
-import { ref, nextTick, onBeforeUnmount } from 'vue'
+import { ref, computed, watch } from 'vue'
 
-defineProps({
+const props = defineProps({
   field: { type: Object, required: true },
   modelValue: { default: null }
 })
 const emit = defineEmits(['update:modelValue'])
 
-const selRef = ref(null)
-const listRef = ref(null)
 const open = ref(false)
-const posStyle = ref({})
+const pickValues = ref([])
+// 横屏（CSS 高约 295）时减少可见行数让弹层放得下；旋转重建页面后自动重算
+const pickerRows = window.innerHeight < 400 ? 3 : 5
 
-function close() {
-  if (!open.value) return
+// 必须 give PickerOption 对象格式：Vant 4.10 的 Picker 对字符串列做 'children' in item
+// 检查会抛 TypeError（Cannot use 'in' operator），导致面板渲染中断只剩遮罩
+const pickColumns = computed(() =>
+  (props.field.options || []).map(o => ({ text: String(o), value: o }))
+)
+
+// 打开时把当前值同步给 picker
+watch(open, (v) => {
+  if (v) pickValues.value = props.modelValue == null ? [] : [props.modelValue]
+})
+
+function onPick({ selectedOptions }) {
+  if (selectedOptions.length) emit('update:modelValue', selectedOptions[0].value)
   open.value = false
-  document.removeEventListener('pointerdown', onDocDown, true)
-  document.removeEventListener('scroll', onDocScroll, true)
 }
-function onDocDown(e) {
-  // 点在触发按钮上交给 toggle 处理（再点一次收起）；点在列表里是选择；其余位置关闭
-  if (selRef.value && selRef.value.contains(e.target)) return
-  if (listRef.value && listRef.value.contains(e.target)) return
-  close()
-}
-function onDocScroll() { close() }
-
-async function toggle() {
-  if (open.value) { close(); return }
-  const r = selRef.value.getBoundingClientRect()
-  const vw = window.innerWidth
-  const left = Math.max(4, Math.min(r.left, vw - r.width - 4))
-  // 先隐藏渲染拿到列表实际高度，再决定弹在下还是上（面板底部空间不足时翻转）
-  posStyle.value = { left: left + 'px', width: r.width + 'px', top: '-9999px' }
-  open.value = true
-  document.addEventListener('pointerdown', onDocDown, true)
-  document.addEventListener('scroll', onDocScroll, true)
-  await nextTick()
-  if (!listRef.value) return
-  const h = listRef.value.offsetHeight
-  const vh = window.innerHeight
-  let top = r.bottom + 4
-  if (top + h > vh - 4) top = Math.max(4, r.top - h - 4)
-  posStyle.value = { left: left + 'px', width: r.width + 'px', top: top + 'px' }
-}
-
-function pick(o) {
-  emit('update:modelValue', o)
-  close()
-}
-
-onBeforeUnmount(close)
 </script>

@@ -2,7 +2,7 @@
 import { createApp, reactive } from 'vue'
 import App from './App.vue'
 import './styles.css'
-import { installErrorHook } from './bridge.js'
+import { installErrorHook, sendJsErr } from './bridge.js'
 import { boot, api, IS_DEV } from './data/source.js'
 
 installErrorHook()
@@ -57,4 +57,9 @@ export function emitSubmit() {
   if (res && res.dev) store.submitPreview = JSON.stringify(res.payload, null, 2)
 }
 
-createApp(App).mount('#app')
+const app = createApp(App)
+// Vue 组件内的渲染/生命周期错误走这里（window.onerror 抓不到）
+app.config.errorHandler = (err, _inst, info) => {
+  sendJsErr(`vue[${info}]: ${(err && (err.stack || err.message)) || err}`)
+}
+app.mount('#app')

@@ -26,13 +26,6 @@ header { display: flex; align-items: center; justify-content: space-between; mar
 .conn.ok { color: var(--ok); border-color: rgba(57,217,138,.4); }
 .conn.err { color: var(--err); border-color: rgba(244,101,95,.4); }
 
-nav { display: flex; gap: 6px; flex: 0 0 auto; background: rgba(255,255,255,.04); padding: 4px; border-radius: 11px; }
-.tab {
-  flex: 1; border: 0; background: transparent; color: var(--dim);
-  font-size: 13px; padding: 7px 4px; border-radius: 8px; cursor: pointer;
-}
-.tab.active { background: linear-gradient(180deg, #2f66b8, #27538f); color: #fff; font-weight: 600; }
-
 .panel { flex: 1 1 auto; overflow: auto; margin-top: 10px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
 .desc { margin: 0 0 8px; color: var(--dim); font-size: 13px; }
@@ -47,36 +40,45 @@ nav { display: flex; gap: 6px; flex: 0 0 auto; background: rgba(255,255,255,.04)
 }
 .field input[type="checkbox"] { width: 18px; height: 18px; }
 
-/* 自绘下拉：悬浮窗里原生 select 弹层弹不出来（见 README「WebView 区域与横竖屏适配」） */
-.field .sel {
-  flex: 1 1 auto; min-width: 0;
-  display: flex; align-items: center; justify-content: space-between; gap: 6px;
-  background: var(--card2); color: var(--txt);
-  border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; font-size: 13px;
-  font-family: inherit; cursor: pointer;
+/* ===== Vant 主题：ConfigProvider dark 之上叠加 SAOIF 色板 ===== */
+.van-theme-dark {
+  --van-primary-color: var(--acc);
+  --van-background: var(--bg);
+  --van-background-2: var(--card);
+  --van-background-3: var(--card2);
+  --van-text-color: var(--txt);
+  --van-text-color-2: #c6d4ee;
+  --van-text-color-3: var(--dim);
+  --van-border-color: var(--line);
+  --van-popup-background: var(--card);
+  --van-picker-background: var(--card);
+  --van-picker-option-selected-text-color: var(--acc);
+  --van-tabs-bottom-bar-color: var(--acc);
+  --van-tabs-background: transparent;
 }
-.sel .sel-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sel .arr { flex: 0 0 auto; color: var(--dim); font-size: 11px; }
-.dropdown {
-  position: fixed; z-index: 999;
-  background: var(--card2); color: var(--txt);
-  border: 1px solid var(--acc); border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(0,0,0,.55);
-  overflow: auto;
+/* 任务标签页透明底，融入页面背景 */
+.task-tabs { background: transparent; }
+
+/* 表单行内 Vant 控件的外观/密度 */
+.field .van-cell {
+  flex: 1 1 0; min-width: 0; width: auto; padding: 5px 9px;
+  background: var(--card2); border: 1px solid var(--line); border-radius: 8px;
+  font-size: 13px;
 }
-.dropdown .opt { padding: 9px 12px; font-size: 13px; border-bottom: 1px solid var(--line); cursor: pointer; }
-.dropdown .opt:last-child { border-bottom: 0; }
-.dropdown .opt.on { color: var(--acc); font-weight: 600; }
-.dropdown .opt:active { background: rgba(76,155,240,.16); }
-/* 提示文字独占一行，缩进对齐到输入框起始位置（108 标签 + 8 间距） */
-.tip { flex-basis: 100%; margin: 0; padding-left: 116px; color: var(--dim); font-size: 11px; line-height: 1.4; }
+.field .van-cell::after { display: none; }
+.field .van-stepper { margin-left: auto; --van-stepper-input-width: 58px; }
+.field .van-switch { margin-left: auto; }
+/* 提示文字独占一行，靠右对齐到控件列（stepper/switch 都贴右侧） */
+.tip { flex-basis: 100%; margin: 0; text-align: right; color: var(--dim); font-size: 11px; line-height: 1.4; }
 .empty { color: var(--dim); text-align: center; padding: 18px 0; }
 
 footer { flex: 0 0 auto; display: flex; gap: 8px; margin-top: 10px; }
-footer button { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 14px; cursor: pointer; }
-.ghost { background: transparent; color: var(--dim); }
-.run { flex: 1 1 auto; background: linear-gradient(180deg, #3f8ae0, #2f6dc4); color: #fff; border-color: transparent; font-weight: 600; }
-.run:disabled { opacity: .45; }
+footer .van-button.ghost { background: transparent; color: var(--dim); border-color: var(--line); border-radius: 10px; }
+footer .van-button.run {
+  flex: 1 1 auto; border: none; border-radius: 10px; font-weight: 600;
+  background: linear-gradient(180deg, #3f8ae0, #2f6dc4);
+}
+footer .van-button.run:disabled { opacity: .45; }
 
 /* 参数校验/提示条 */
 .hint { margin-top: 8px; padding: 7px 10px; border-radius: 9px; font-size: 12px; border: 1px solid var(--line); }
