@@ -37,17 +37,39 @@ nav { display: flex; gap: 6px; flex: 0 0 auto; background: rgba(255,255,255,.04)
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
 .desc { margin: 0 0 8px; color: var(--dim); font-size: 13px; }
 .fields { display: flex; flex-direction: column; gap: 8px; }
-.field { display: flex; align-items: center; gap: 8px; }
+.field { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .field .label { flex: 0 0 108px; color: var(--dim); font-size: 13px; }
 .field input[type="text"],
-.field input[type="number"],
-.field select {
+.field input[type="number"] {
   flex: 1 1 auto; min-width: 0;
   background: var(--card2); color: var(--txt);
   border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; font-size: 13px;
 }
 .field input[type="checkbox"] { width: 18px; height: 18px; }
-.tip { color: var(--dim); font-size: 11px; }
+
+/* 自绘下拉：悬浮窗里原生 select 弹层弹不出来（见 README「WebView 区域与横竖屏适配」） */
+.field .sel {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  background: var(--card2); color: var(--txt);
+  border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; font-size: 13px;
+  font-family: inherit; cursor: pointer;
+}
+.sel .sel-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sel .arr { flex: 0 0 auto; color: var(--dim); font-size: 11px; }
+.dropdown {
+  position: fixed; z-index: 999;
+  background: var(--card2); color: var(--txt);
+  border: 1px solid var(--acc); border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.55);
+  overflow: auto;
+}
+.dropdown .opt { padding: 9px 12px; font-size: 13px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.dropdown .opt:last-child { border-bottom: 0; }
+.dropdown .opt.on { color: var(--acc); font-weight: 600; }
+.dropdown .opt:active { background: rgba(76,155,240,.16); }
+/* 提示文字独占一行，缩进对齐到输入框起始位置（108 标签 + 8 间距） */
+.tip { flex-basis: 100%; margin: 0; padding-left: 116px; color: var(--dim); font-size: 11px; line-height: 1.4; }
 .empty { color: var(--dim); text-align: center; padding: 18px 0; }
 
 footer { flex: 0 0 auto; display: flex; gap: 8px; margin-top: 10px; }

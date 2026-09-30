@@ -65,6 +65,50 @@ init 结构: { type:"init", data:{ ver, sid, tasks, configs, values } }
 
 页面必须实现：`APP.recv(b64)` / `APP.probe(tag,sid)`（**回 ping，不能回 ready**，否则与 Lua 的 init 重发形成死循环）/ `APP.autoTest()`（连通自检：改一个参数 → 提交）。
 
+## WebView 区域与横竖屏适配（实测）
+
+宿主窗口由 `ui/h5_bridge.lua` 全屏创建（`newLayout(-1,-1)`），引擎会在用户布局外再包一层
+标题栏 + ScrollView。**WebView 宽度是 `-1` 填满，高度必须传显式像素值**——高度传 `-1` 会被
+ScrollView 包裹层塌缩成自适应内容（曾实测塌缩到 370px）。
+
+实测基准设备：云手机 720×1280，density 2.0（WebView = Chrome 94）：
+
+| 方向 | WebView 控件（物理 px） | H5 CSS 视口（÷2） | 页面锚点 |
+|---|---|---|---|
+| 竖屏 | **657 × 1150**，位于 [31, 87] | **329 × 575** | 顶部贴标题栏，底部留 43px |
+| 横屏 | **1217 × 590**，位于 [31, 87] | **608 × 295** | 同上 |
+
+换算公式（其他分辨率设备通用，`getDisplaySize()` 返回的是**未旋转**的原始分辨率，
+横屏需按 `getDisplayRotate()` 为奇数交换宽高）：
+
+```
+WebView 高度 = 当前方向屏幕高 − 130      （高度上限 −118，留 12px 安全余量）
+WebView 宽度 = 当前方向屏宽 − 55（填满）
+
+130 = 顶部 28（窗口边距）+ 55（引擎标题栏）+ 4（内容框上边距）
+    + 底部 27（窗口边距）+ 4（内容框下边距）+ 12（安全余量）
+```
+
+H5 侧适配约定：
+
+1. 视口 meta 为 `width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no`，
+   CSS 宽度自动等于 WebView 宽 ÷ density；**`100vh` = WebView 高度**（竖屏 575 / 横屏 295 CSS px）。
+2. 根容器 `.wrap` 为 `height:100vh` 的 flex 列，`.panel` 区 `flex:1 + overflow:auto` 内部滚动——
+   **横屏时 .panel 仅约 160 CSS px 高，面板内滚动体验是横屏适配重点**。
+3. 竖屏 CSS 宽仅 329，表单元素不要写固定像素宽度（label + input 行按窄版弹性布局）。
+4. **窗口开着旋转屏幕时 WebView 会销毁重建**（Lua 端检测方向变化后重建窗口）：页面重新加载、
+   重新走 ready → init 流程并重放 `values`。H5 侧不要依赖跨旋转的内存状态，状态一律以 init 下发为准。
+5. **禁用依赖原生弹层的控件**：悬浮窗没有 Activity window token，WebView 的原生 `<select>`
+   下拉弹不出来（实测只拿到焦点框、不出现列表），`alert/confirm/prompt`、原生日期选择等同理。
+   enum 字段已在 `FieldRenderer.vue` 用自绘下拉实现（`Teleport` 到 body + `fixed` 定位，
+   空间不足向上翻转、点外部或滚动收起）；新增字段类型时同样要自绘，不要引入原生弹层控件。
+6. **字段提示文字（`tip`）布局**：放在控件下方独占一行（`.field` 开 `flex-wrap`，
+   `.tip` 缩进 116px 对齐控件起始位置），不要和控件挤同一行——竖屏 CSS 宽 329 放不下。
+7. **构建部署自查**：`npm run build` 由 gen-lua 直写 `脚本/ui/h5_page.lua`，但 IDE 可能仍持有
+   编辑器缓冲里的旧版并用它编译（lua 文件是新的、跑的却是旧页面）。运行后核对设备日志
+   `[H5] 页面已写入 …（N 字节）` 是否等于 `dist/index.html` 的大小，不一致就再运行一次
+   （IDE 重新加载文件后即生效）。改 Lua 侧项目文件同理，优先走 IDE 通道保存。
+
 ## 依赖的 Lua 侧约定
 
 - `脚本/tasks/<id>/vars.lua`：纯数据表（`id/name/desc/order/defaults/schema`），sync 直接执行它
