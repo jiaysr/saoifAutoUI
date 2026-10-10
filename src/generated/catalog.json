@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30 11:57:51",
+  "generatedAt": "2026-10-01 19:39:55",
   "scriptDir": "D:/project/saoifAuto/脚本",
   "tasks": [
     {
@@ -163,7 +163,7 @@
           "type": "bool"
         },
         {
-          "key": "showHud",
+          "key": "mmShowHud",
           "label": "显示 HUD",
           "type": "bool"
         }

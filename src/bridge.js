@@ -39,12 +39,19 @@ export function send(msg) {
   callLua("__h5_onMessage('" + b64encode(JSON.stringify(msg)) + "')")
 }
 
+// ---- 当前会话 sid（传输层状态：init 到达后由页面写入，所有上行报文都要带）----
+// ⚠ 必须带 sid：ui/h5_bridge.lua 会话校验会丢弃 sid 不匹配的报文（含 jserror）
+let curSid = ''
+export function setSid(sid) { curSid = sid || '' }
+export function getSid() { return curSid }
+
 // ---- 协议消息 ----
 export const sendReady  = (sid) => send({ type: 'ready', sid: sid || '' })
 export const sendAck    = (sid) => send({ type: 'ack', sid })
 export const sendCancel = (sid) => send({ type: 'cancel', sid })
 export const sendPing   = (sid, probe) => send({ type: 'ping', sid, probe: probe || '' })
-export const sendJsErr  = (err) => send({ type: 'jserror', error: String(err) })
+// 字段名用 text：Lua 侧 __h5_onMessage 读的是 msg.text
+export const sendJsErr  = (err) => send({ type: 'jserror', sid: curSid, text: String(err) })
 
 export function sendChange(sid, func, key, value, values) {
   // 同时给出 key/value 与全量 values，兼容 Lua 侧两种取法

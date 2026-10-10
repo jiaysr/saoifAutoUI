@@ -3,14 +3,14 @@
 // 两种模式对外接口一致，UI 代码完全不感知差异。
 import catalog from '../generated/catalog.json'
 import {
-  hasBridge, installReceiver, sendReady, sendAck, sendChange, sendSubmit, sendCancel,
+  hasBridge, installReceiver, setSid, getSid,
+  sendReady, sendAck, sendChange, sendSubmit, sendCancel,
 } from '../bridge.js'
 
 export const IS_DEV = !hasBridge()
 export const CATALOG = catalog
 
 const LS_KEY = 'saoif_dev_values'
-let sid = ''
 let devValues = {}
 
 function loadLocal() {
@@ -49,9 +49,9 @@ export function boot(handler, autoTestHook) {
 
   installReceiver((msg) => {
     const d = msg && msg.data ? msg.data : {}
-    if (d.sid) sid = d.sid
+    if (d.sid) setSid(d.sid)
     handler(msg)
-    if (msg && msg.type === 'init') sendAck(sid)
+    if (msg && msg.type === 'init') sendAck(getSid())
   }, autoTestHook)
   sendReady('')
   return { dev: false }
@@ -60,15 +60,15 @@ export function boot(handler, autoTestHook) {
 export const api = {
   change(scope, key, value, values) {
     if (IS_DEV) { saveLocal(values); return }
-    sendChange(sid, scope, key, value, values)
+    sendChange(getSid(), scope, key, value, values)
   },
   submit(scope, values) {
     if (IS_DEV) {
       saveLocal(values)
       return { dev: true, payload: Object.assign({ func: scope }, values) }
     }
-    sendSubmit(sid, scope, values)
+    sendSubmit(getSid(), scope, values)
     return null
   },
-  cancel() { if (!IS_DEV) sendCancel(sid) },
+  cancel() { if (!IS_DEV) sendCancel(getSid()) },
 }
